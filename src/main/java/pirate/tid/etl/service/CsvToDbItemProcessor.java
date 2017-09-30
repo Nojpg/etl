@@ -10,15 +10,15 @@ import pirate.tid.etl.domain.AccountName;
  */
 
 @Slf4j
-public class ETLItemProcessor implements ItemProcessor<AccountName, Account> {
+public class CsvToDbItemProcessor implements ItemProcessor<AccountName, Account> {
 
     @Override
     public Account process(AccountName accountName) throws Exception {
         Account transformedData = new Account();
         transformedData.setAccountName(accountName.getAccountName());
-        int wrapper = (Integer.parseInt(accountName.getTrafficVolume())/1024)/1024;
-        transformedData.setTrafficVolume(String.valueOf(wrapper));
-        transformedData.setAddress(accountName.getCity() + accountName.getStreet() + accountName.getHouse());
+        double wrapper = (Double.parseDouble(accountName.getTrafficVolume()) / 1024) / 1024;
+        transformedData.setTrafficVolume(String.valueOf(wrapper) + " Gb");
+        transformedData.setAddress(accountName.getCity() + ", " + accountName.getStreet() + ", " + accountName.getHouse());
         log.info("transformed: " + transformedData.toString());
         return transformedData;
     }

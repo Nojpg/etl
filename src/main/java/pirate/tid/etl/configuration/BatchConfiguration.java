@@ -6,25 +6,30 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
-import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.data.RepositoryItemReader;
+import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.file.transform.PassThroughLineAggregator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.domain.Sort;
 import pirate.tid.etl.domain.Account;
-import pirate.tid.etl.repository.AccountDataRepository;
-import pirate.tid.etl.service.ETLItemProcessor;
 import pirate.tid.etl.domain.AccountName;
+import pirate.tid.etl.repository.AccountDataRepository;
+import pirate.tid.etl.service.CsvToDbItemProcessor;
+import pirate.tid.etl.service.DbToCsvItemProcessor;
+//import pirate.tid.etl.service.ETLItemProcessor;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Nojpg on 28.09.17.
@@ -34,65 +39,106 @@ import javax.sql.DataSource;
 @EnableBatchProcessing
 public class BatchConfiguration {
 
-//    @Autowired
-    AccountDataRepository accountDataRepository;
-
     @Autowired
     public JobBuilderFactory jobBuilderFactory;
-
     @Autowired
     public StepBuilderFactory stepBuilderFactory;
-
     @Qualifier("dataSource")
     @Autowired
     public DataSource dataSource;
+    @Autowired
+    AccountDataRepository accountDataRepository;
 
     @Bean
-    public FlatFileItemReader<AccountName> reader(){
-        FlatFileItemReader<AccountName> reader = new FlatFileItemReader<AccountName>();
+    public FlatFileItemReader<AccountName> csvToDbReader() {
+        FlatFileItemReader<AccountName> reader = new FlatFileItemReader<>();
         reader.setResource(new ClassPathResource("AccountName.csv"));
-        reader.setLineMapper(new DefaultLineMapper<AccountName>(){{
-            setLineTokenizer(new DelimitedLineTokenizer(){{
+        reader.setLineMapper(new DefaultLineMapper<AccountName>() {{
+            setLineTokenizer(new DelimitedLineTokenizer() {{
                 setNames(new String[]{"accountName", "trafficVolume", "city", "street", "house"});
             }});
             setFieldSetMapper(new BeanWrapperFieldSetMapper<AccountName>() {{
                 setTargetType(AccountName.class);
             }});
-                       }});
+        }});
         return reader;
     }
 
     @Bean
-    public ETLItemProcessor processor(){
-        return new ETLItemProcessor();
+    public CsvToDbItemProcessor csvToDbProcessor() {
+        return new CsvToDbItemProcessor();
     }
 
     @Bean
-    public JdbcBatchItemWriter<Account> writer(){
-        JdbcBatchItemWriter<Account> writer = new JdbcBatchItemWriter<Account>();
-        writer.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<Account>());
-        writer.setSql("INSERT INTO provider (account_name, traffic_volume, address) VALUES (:accountName, :trafficVolume, :address)");
-        writer.setDataSource(dataSource);
+    public RepositoryItemWriter<Account> csvToDbWriter(){
+        RepositoryItemWriter<Account> writer = new RepositoryItemWriter<>();
+        writer.setRepository(accountDataRepository);
+        writer.setMethodName("save");
         return writer;
     }
 
     @Bean
-    public Job accountJob(JobCompletionNotificationListener listener){
+    public Job accountJob(JobCompletionNotificationListener listener) {
         return jobBuilderFactory.get("accountJob")
                 .incrementer(new RunIdIncrementer())
                 .listener(listener)
-                .flow(step1())
+                .flow(csvToDbStep1())
                 .end()
                 .build();
     }
 
     @Bean
-    public Step step1() {
+    public Step csvToDbStep1() {
         return stepBuilderFactory.get("step1")
-                .<AccountName, Account> chunk(10)
-                .reader(reader())
-                .processor(processor())
-                .writer(writer())
+                .<AccountName, Account>chunk(10)
+                .reader(csvToDbReader())
+                .processor(csvToDbProcessor())
+                .writer(csvToDbWriter())
                 .build();
     }
+
+//    @Bean
+//    public RepositoryItemReader<Account> DbToCsvReader() {
+//        RepositoryItemReader<Account> reader = new RepositoryItemReader<>();
+//        reader.setRepository(accountDataRepository);
+//        reader.setMethodName("findAll");
+//        Map<String, Sort.Direction> sort = new HashMap<>();
+//        sort.put("id", Sort.Direction.ASC);
+//        reader.setSort(sort);
+//        return reader;
+//    }
+//
+//    @Bean
+//    public DbToCsvItemProcessor DbToCsvProcessor() {
+//        return new DbToCsvItemProcessor();
+//    }
+//
+//    @Bean
+//    public FlatFileItemWriter<AccountName> DbToCsvWriter(){
+//        FlatFileItemWriter<AccountName> writer = new FlatFileItemWriter<>();
+//        writer.setResource(new ClassPathResource("AccountName.csv"));
+//        writer.setLineAggregator(new PassThroughLineAggregator<AccountName>());
+//        return writer;
+//    }
+//
+//    @Bean
+//    public Job accountJob(JobCompletionNotificationListener listener) {
+//        return jobBuilderFactory.get("accountJob")
+//                .incrementer(new RunIdIncrementer())
+//                .listener(listener)
+//                .flow(DbToCsvStep1())
+//                .end()
+//                .build();
+//    }
+//
+//    @Bean
+//    public Step DbToCsvStep1() {
+//        return stepBuilderFactory.get("step1").
+//                <Account, AccountName>chunk(10)
+//                .reader(DbToCsvReader())
+//                .processor(DbToCsvProcessor())
+//                .writer(DbToCsvWriter())
+//                .build()
+//                .execute();
+//    }
 }
