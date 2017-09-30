@@ -39,6 +39,11 @@ import java.util.Map;
 @EnableBatchProcessing
 public class BatchConfiguration {
 
+    //TODO Construtor
+    //TODO check before read && before write classes ext repo imp item
+    //TODO generate csv
+    //TODO dic?
+
     @Autowired
     public JobBuilderFactory jobBuilderFactory;
     @Autowired
