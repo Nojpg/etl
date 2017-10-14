@@ -4,7 +4,6 @@ import lombok.Data;
 
 import javax.persistence.*;
 
-//import org.springframework.data.annotation.Id;
 
 /**
  * Created by Nojpg on 28.09.17.
@@ -18,11 +17,8 @@ public class Account implements DomainSerializable {
     @GeneratedValue
     @Column(name = "account_id")
     private Long account_id;
-    //    @Column(name = "account_name")
     private String accountName;
-    //    @Column(name = "traffic_volume")
     private String trafficVolume;
-    //    @Column(name = "address")
     private String address;
 
     public Account(Long account_id, String accountName, String trafficVolume, String address) {
