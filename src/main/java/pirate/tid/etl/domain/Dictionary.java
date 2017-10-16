@@ -6,55 +6,64 @@ import lombok.extern.slf4j.Slf4j;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by Nojpg on 30.09.17.
  */
 @Slf4j
-@Getter
 public class Dictionary {
-    List<String> cityList = List.of(
+    public List<String> cityList = List.of(
             "Bath", "Bangor", "Brislot", "Belfast", "Bradford",
             "Carlisle", "Exeter", "Lancaster", "Norwich", "Perth");
-    List<String> streetList = List.of(
+    public List<String> streetList = List.of(
             "Kingsway", "Canal", "Mosley", "Portland", "Sackville",
             "Oxford", "Princess", "Quay", "Spring", "Wilmslow");
-    List<String> houseList = List.of(
-            "88", "33/2", "44", "321", "56",
-            "98", "78", "345", "123", "234/3");
-    List<String> nameList = List.of(
+    public List<Integer> houseList = Collections.nCopies(10,
+            new Random().nextInt(100));
+    public List<String> nameList = List.of(
             "James", "Alex", "Ben", "Tom", "Ryan",
             "Liam", "Harry", "David", "Joe", "Lewis");
 
-    List<String> trafficVolumeMb = Collections.nCopies(10,
-            String.valueOf(new Random().nextInt(1000000)));
+    public List<?> trafficVolumeMb = Collections.nCopies(10,
+            (new Random().nextInt(1000000)));
 
+    public List<String> dateList;
 
-    List<String> dateList;
-
-    public Dictionary(String pattern) throws ParseException {
-        this.generateTime(pattern);
+    public Dictionary(String type) throws ParseException {
+        this.generate(type);
     }
 
-//    public Dictionary(String pattern, String type) throws ParseException {
-//        this.generateTime(pattern);
-//        if (type == "accountName"){
-//            AccountName accountName = new AccountName();
-//        }
-//    }
+    private void generate(String type){
+        String pattern;
+        if (type.equals(" kb")){
+            pattern = "mm-DD-yyyy";
+        } else  {
+            pattern = "DD-mm-yyyy";
+            type = " mb";
+        }
+        String finalType = type;
+        trafficVolumeMb = trafficVolumeMb.stream().map(volume -> {
+            if (finalType.equals(" kb")){
+                return String.valueOf(Integer.parseInt(String.valueOf(volume))*1024) + finalType;
+            } else return String.valueOf(volume) + finalType;
+        }).collect(Collectors.toList());
 
-    private List<String> generateTime(String pattern) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
-
-        Date dateFrom = dateFormat.parse("2000");
-        long timestampFrom = dateFrom.getTime();
-        Date dateTo = dateFormat.parse("2018");
-        long timestampTo = dateTo.getTime();
-        long timeRange = timestampTo - timestampFrom;
-        long randomTimestamp = timestampFrom + (long)(new Random().nextDouble() * timeRange);
-        dateList = Collections.nCopies(10,
-                String.valueOf(dateFormat.format(new Date(randomTimestamp))));
-        return dateList;
+        try {
+            Date dateFrom;
+            dateFrom = dateFormat.parse("2000");
+            long timestampFrom = dateFrom.getTime();
+            Date dateTo;
+            dateTo = dateFormat.parse("2018");
+            long timestampTo = dateTo.getTime();
+            long timeRange = timestampTo - timestampFrom;
+            long randomTimestamp = timestampFrom + (long)(new Random().nextDouble() * timeRange);
+            dateList = Collections.nCopies(10,
+                    String.valueOf(dateFormat.format(new Date(randomTimestamp))));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
     }
-
 }
