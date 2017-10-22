@@ -7,6 +7,9 @@ import org.springframework.stereotype.Component;
 import pirate.tid.etl.domain.AccountName;
 import pirate.tid.etl.domain.Dictionary;
 
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 @Component
 public class Reader implements StepExecutionListener{
@@ -16,6 +19,14 @@ public class Reader implements StepExecutionListener{
     public void beforeStep(StepExecution stepExecution) {
         for (int i = 0; i < 10; i++) {
             System.out.println("before step ");
+            List<AccountName> list = new ArrayList<>();
+            try {
+                list.add(new Dictionary(" kb"));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+
         }
 
 
