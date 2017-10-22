@@ -14,17 +14,20 @@ import java.util.stream.Stream;
  */
 @Slf4j
 public class Dictionary {
-    public List<String> cityList = List.of(
-            "Bath", "Bangor", "Brislot", "Belfast", "Bradford",
-            "Carlisle", "Exeter", "Lancaster", "Norwich", "Perth");
-    public List<String> streetList = List.of(
-            "Kingsway", "Canal", "Mosley", "Portland", "Sackville",
-            "Oxford", "Princess", "Quay", "Spring", "Wilmslow");
+    private String[] cities = {"Bath", "Bangor", "Brislot", "Belfast", "Bradford",
+            "Carlisle", "Exeter", "Lancaster", "Norwich", "Perth"};
+    public List<String> cityList = Arrays.asList(cities);
+
+    private String[] streets = {"Kingsway", "Canal", "Mosley", "Portland", "Sackville",
+            "Oxford", "Princess", "Quay", "Spring", "Wilmslow"};
+    public List<String> streetList = Arrays.asList(streets);
+
     public List<Integer> houseList = Collections.nCopies(10,
             new Random().nextInt(100));
-    public List<String> nameList = List.of(
-            "James", "Alex", "Ben", "Tom", "Ryan",
-            "Liam", "Harry", "David", "Joe", "Lewis");
+
+    private String[] names = {"James", "Alex", "Ben", "Tom", "Ryan",
+            "Liam", "Harry", "David", "Joe", "Lewis"};
+    public List<String> nameList = Arrays.asList(names);
 
     public List<?> trafficVolumeMb = Collections.nCopies(10,
             (new Random().nextInt(1000000)));

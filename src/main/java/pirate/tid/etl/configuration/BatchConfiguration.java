@@ -7,25 +7,28 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 
+import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
+import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.support.NullValue;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.PathResource;
-import org.springframework.core.io.Resource;
 import pirate.tid.etl.domain.Account;
 import pirate.tid.etl.domain.AccountName;
 import pirate.tid.etl.repository.AccountDataRepository;
 import pirate.tid.etl.service.CsvToDbItemProcessor;
 import pirate.tid.etl.service.GenerateCsvItemProcessor;
+import pirate.tid.etl.service.Reader;
 
 
 import javax.sql.DataSource;
@@ -53,6 +56,11 @@ public class BatchConfiguration {
     public DataSource dataSource;
     @Autowired
     AccountDataRepository accountDataRepository;
+    @Autowired
+    public Reader readerListener;
+
+    @Autowired
+    public FlowDecision flowDecision;
 
     @Bean
     public FlatFileItemReader<AccountName> csvToDbReader() {
@@ -83,11 +91,13 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public Job accountJob(JobCompletionNotificationListener listener) {
+    public Job accountJob(JobCompletionNotificationListener listener, Reader readerListener) {
         return jobBuilderFactory.get("accountJob")
                 .incrementer(new RunIdIncrementer())
-                .listener(listener)
-                .flow(csvToDbStep1())
+//                .listener(listener)
+                .start(csvToDbStep1())
+                .next(flowDecision)
+//                .flow(csvToDbStep1())
                 .end()
                 .build();
     }
@@ -99,22 +109,26 @@ public class BatchConfiguration {
                 .reader(csvToDbReader())
                 .processor(csvToDbProcessor())
                 .writer(csvToDbWriter())
+                .listener(readerListener)
                 .build();
     }
 
-//    @Bean //TODO how to do reader
-//    public ItemReader<AccountName> csvGeneratorReader() {
-//
-//        }
-//
-//        RepositoryItemReader<Account> reader = new RepositoryItemReader<>();
+    @Bean //TODO how to do reader
+    public ItemReader<String> csvGeneratorReader() {
+
+//        ItemReader<Account> reader = new ItemReader<>() {
+//            @Override
+//            public Account read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+//                return null;
+//            }
+//        };
 //        reader.setRepository(accountDataRepository);
 //        reader.setMethodName("findAll");
 //        Map<String, Sort.Direction> sort = new HashMap<>();
 //        sort.put("id", Sort.Direction.ASC);
 //        reader.setSort(sort);
-//        return reader;
-//    }
+        return null;
+    }
 //
     @Bean
     public GenerateCsvItemProcessor javaToCsvItemProcessor() {
@@ -126,35 +140,22 @@ public class BatchConfiguration {
         FlatFileItemWriter<AccountName> writer = new FlatFileItemWriter<>();
         writer.setResource(new FileSystemResource("input/") {
         });
-        try {
-            writer.afterPropertiesSet(
-
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        writer.setLineAggregator(new );
+        writer.setLineAggregator(new DelimitedLineAggregator<AccountName>(){{
+            setDelimiter(",");
+            setFieldExtractor(new BeanWrapperFieldExtractor<AccountName>(){{
+                setNames(new String[]{"accountName", "trafficVolume", "city", "street", "house"});
+            }});
+        }});
         return writer;
     }
 
-//    @Bean
-//    public Job accountJob(JobCompletionNotificationListener listener) {
-//        return jobBuilderFactory.get("accountJob")
-//                .incrementer(new RunIdIncrementer())
-//                .listener(listener)
-//                .flow(DbToCsvStep1())
-//                .end()
-//                .build();
-//    }
-//
     @Bean
     public Step csvGeneratorStep() {
         return stepBuilderFactory.get("step1").
                 <Account, AccountName>chunk(10)
-                .reader(DbToCsvReader())
+                .reader(csvGeneratorReader())
                 .processor(javaToCsvItemProcessor())
                 .writer(javaToCsvWriter())
-                .build()
-                .execute();
+                .build();
     }
 }

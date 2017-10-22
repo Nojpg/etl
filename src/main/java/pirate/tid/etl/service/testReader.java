@@ -8,9 +8,12 @@ import pirate.tid.etl.domain.Account;
  * Created by Nojpg on 30.09.17.
  */
 public class testReader<Account> extends RepositoryItemReader<Account> implements ItemReadListener {
+
     @Override
     public void beforeRead() {
-        System.out.println("foo");
+
+
+
     }
 
     @Override

@@ -2,6 +2,7 @@ package pirate.tid.etl.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
+import pirate.tid.etl.domain.Account;
 import pirate.tid.etl.domain.AccountName;
 import pirate.tid.etl.domain.Dictionary;
 
