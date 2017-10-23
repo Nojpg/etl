@@ -15,6 +15,8 @@ import java.util.Random;
 public class Reader implements StepExecutionListener{
 
 
+    //TODO написать генератор в бефор
+
     @Override
     public void beforeStep(StepExecution stepExecution) {
         for (int i = 0; i < 10; i++) {
@@ -45,6 +47,8 @@ public class Reader implements StepExecutionListener{
 //        }
     }
 
+
+    //TODO написать зип в афтер
     @Override
     public ExitStatus afterStep(StepExecution stepExecution) {
         return null;
