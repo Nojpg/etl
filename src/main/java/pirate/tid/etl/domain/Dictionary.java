@@ -1,18 +1,14 @@
 package pirate.tid.etl.domain;
 
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.validation.constraints.NotNull;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by Nojpg on 30.09.17.
@@ -28,7 +24,7 @@ public class Dictionary {
     public List<String> streetList = Arrays.asList(streets);
 
     public List<Integer> houseList = Collections.nCopies(10,
-            new Random().nextInt(100));
+            new Random().nextInt(100)+1);
 
     private String[] names = {"James", "Alex", "Ben", "Tom", "Ryan",
             "Liam", "Harry", "David", "Joe", "Lewis"};

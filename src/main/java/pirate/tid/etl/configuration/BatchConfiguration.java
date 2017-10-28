@@ -6,11 +6,6 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
-
-import org.springframework.batch.core.step.builder.SimpleStepBuilder;
-import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.core.step.builder.StepBuilderHelper;
-import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.MultiResourceItemReader;
@@ -22,7 +17,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -34,15 +28,11 @@ import pirate.tid.etl.service.CsvToDbCusItemProcessor;
 import pirate.tid.etl.service.CsvToDbItemProcessor;
 import pirate.tid.etl.service.Reader;
 
-
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 /**
@@ -81,8 +71,7 @@ public class BatchConfiguration {
 //                System.out.println(resources[j]);
 //            }
             List<Resource> ew =Arrays.stream(resources).filter((Resource name) -> !(name.getFilename().equals("AccountName.csv"))).collect(Collectors.toList());
-            ew.forEach(name -> System.out.println(name.getFilename())
-            );
+
             resources = ew.toArray(new Resource[0]);
 //            Arrays.stream(resources).forEach(name ->
 //                    System.out.println(name.getFilename()));
@@ -122,14 +111,6 @@ public class BatchConfiguration {
                 setTargetType(CustomerName.class);
             }});
             setLineTokenizer(new DelimitedLineTokenizer(){{
-//                String path = "/home/nojpg/IdeaProjects/etl/src/main/resources/input/";
-//                String inputCsv[] = new File(path).list((dir, name) ->{
-//                    if(!(name.equals("AccountName.csv"))){
-//                        name.endsWith(".csv");
-//                        return true;
-//                    }
-//                    return false;
-//                });
 
                 setNames(new String[]{"trafficVolume", "date", "address"});
             }});
@@ -158,12 +139,12 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public CsvToDbItemProcessor csvToDbProcessor() {
+    public CsvToDbItemProcessor csvAccount() {
         return new CsvToDbItemProcessor();
     }
 
     @Bean
-    public CsvToDbCusItemProcessor foo() {
+    public CsvToDbCusItemProcessor csvCustomer() {
         return new CsvToDbCusItemProcessor();
     }
 
@@ -180,9 +161,9 @@ public class BatchConfiguration {
         return jobBuilderFactory.get("accountJob")
                 .incrementer(new RunIdIncrementer())
                 .listener(listener)
-//                .start(csvToDbStep1)
-                .start(csvToDpStep2)
-//                .next(csvToDpStep2)
+                .start(csvToDbStep1)
+//                .start(csvToDpStep2)
+                .next(csvToDpStep2)
                 .build();
     }
 
@@ -191,7 +172,7 @@ public class BatchConfiguration {
         return stepBuilderFactory.get("step1")
                 .<AccountName, Account>chunk(10)
                 .reader(csvToDbReader())
-                .processor(csvToDbProcessor())
+                .processor(csvAccount())
                 .writer(csvToDbWriter())
                 .listener(readerListener)
                 .build();
@@ -202,7 +183,7 @@ public class BatchConfiguration {
         return stepBuilderFactory.get("step2")
                 .<CustomerName, Account>chunk(10)
                 .reader(resourceItemReader())
-                .processor(foo())
+                .processor(csvCustomer())
                 .writer(csvToDbWriter())
                 .listener(readerListener)
                 .build();
