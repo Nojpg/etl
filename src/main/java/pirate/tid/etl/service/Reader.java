@@ -102,7 +102,7 @@ public class Reader implements StepExecutionListener{
                         finalFileWriter.append(aList.getAddress());
                         finalFileWriter.append(System.lineSeparator());
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        e.printStackTrace(); //TODO add flush and close here
                     }
                 }
 
