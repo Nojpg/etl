@@ -13,13 +13,13 @@ import pirate.tid.etl.domain.AccountName;
 public class CsvToDbItemProcessor implements ItemProcessor<AccountName, Account> {
 
     @Override
-    public Account process(AccountName accountName) throws Exception {
+    public Account process(AccountName accountName) {
         Account transformedData = new Account();
         transformedData.setAccountName(accountName.getAccountName());
-        double wrapper = (Double.parseDouble(accountName.getTrafficVolume()) / 1024) / 1024;
+        Double wrapper = (Double.parseDouble(accountName.getTrafficVolume().split("")[0]) / 1024) / 1024;
         transformedData.setTrafficVolume(String.valueOf(wrapper) + " Gb");
         transformedData.setAddress(accountName.getCity() + ", " + accountName.getStreet() + ", " + accountName.getHouse());
-        log.info("transformed: " + transformedData.toString());
+        log.info("transformed accounts: " + transformedData.toString());
         return transformedData;
     }
 }

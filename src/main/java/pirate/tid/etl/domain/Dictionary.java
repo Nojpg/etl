@@ -1,11 +1,16 @@
 package pirate.tid.etl.domain;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.validation.constraints.NotNull;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,19 +37,21 @@ public class Dictionary {
     public List<?> trafficVolumeMb = Collections.nCopies(10,
             (new Random().nextInt(1000000)));
 
-    public List<String> dateList;
+    public List<String> dateList = new ArrayList<>();
 
-    public Dictionary(String type) throws ParseException {
+    public Dictionary(String type){
         this.generate(type);
+
+
     }
 
-    private void generate(String type){
+    private void generate(@NonNull @NotNull String type){
         String pattern;
-        if (type.equals(" kb")){
-            pattern = "mm-DD-yyyy";
-        } else  {
-            pattern = "DD-mm-yyyy";
+        if (!type.equals(" kb")) {
             type = " mb";
+            pattern = "MM-dd-uuuu";
+        } else{
+            pattern = "dd-MM-uuuu";
         }
         String finalType = type;
         trafficVolumeMb = trafficVolumeMb.stream().map(volume -> {
@@ -53,20 +60,16 @@ public class Dictionary {
             } else return String.valueOf(volume) + finalType;
         }).collect(Collectors.toList());
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
-        try {
-            Date dateFrom;
-            dateFrom = dateFormat.parse("2000");
-            long timestampFrom = dateFrom.getTime();
-            Date dateTo;
-            dateTo = dateFormat.parse("2018");
-            long timestampTo = dateTo.getTime();
-            long timeRange = timestampTo - timestampFrom;
-            long randomTimestamp = timestampFrom + (long)(new Random().nextDouble() * timeRange);
-            dateList = Collections.nCopies(10,
-                    String.valueOf(dateFormat.format(new Date(randomTimestamp))));
-        } catch (ParseException e) {
-            e.printStackTrace();
+        LocalDate startDate = LocalDate.of(1990, 1, 1); //start date
+        long start = startDate.toEpochDay();
+
+        LocalDate endDate = LocalDate.now(); //end date
+        long end = endDate.toEpochDay();
+
+        for (int i = 0; i < 10; i++) {
+            long randomEpochDay = ThreadLocalRandom.current().longs(start, end).findAny().getAsLong();
+            String date = LocalDate.ofEpochDay(randomEpochDay).format(DateTimeFormatter.ofPattern(pattern));
+            dateList.add(date);
         }
     }
 }

@@ -7,31 +7,42 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 
-import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.core.step.builder.SimpleStepBuilder;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.core.step.builder.StepBuilderHelper;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
-import org.springframework.batch.item.file.FlatFileItemWriter;
+import org.springframework.batch.item.file.MultiResourceItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
-import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
-import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cache.support.NullValue;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import pirate.tid.etl.domain.Account;
 import pirate.tid.etl.domain.AccountName;
+import pirate.tid.etl.domain.CustomerName;
 import pirate.tid.etl.repository.AccountDataRepository;
+import pirate.tid.etl.service.CsvToDbCusItemProcessor;
 import pirate.tid.etl.service.CsvToDbItemProcessor;
-import pirate.tid.etl.service.GenerateCsvItemProcessor;
 import pirate.tid.etl.service.Reader;
 
 
 import javax.sql.DataSource;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -41,11 +52,6 @@ import javax.sql.DataSource;
 @Configuration
 @EnableBatchProcessing
 public class BatchConfiguration {
-
-    //TODO Construtor
-    //TODO check before read && before write classes ext repo imp item
-    //TODO generate csv
-    //TODO dic?
 
     @Autowired
     public JobBuilderFactory jobBuilderFactory;
@@ -63,23 +69,102 @@ public class BatchConfiguration {
     public FlowDecision flowDecision;
 
     @Bean
+    public MultiResourceItemReader<CustomerName> resourceItemReader(){
+        MultiResourceItemReader<CustomerName> reader = new MultiResourceItemReader<>();
+//        reader.setResources(new Resource[]{("/home/nojpg/IdeaProjects/etl/src/main/resources/input/*.csv")});
+
+        Resource[] resources = null;
+        ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
+        try {
+            resources = patternResolver.getResources("/input/*.csv");
+//            for (int j = 0; j < resources.length; j++) {
+//                System.out.println(resources[j]);
+//            }
+            List<Resource> ew =Arrays.stream(resources).filter((Resource name) -> !(name.getFilename().equals("AccountName.csv"))).collect(Collectors.toList());
+            ew.forEach(name -> System.out.println(name.getFilename())
+            );
+            resources = ew.toArray(new Resource[0]);
+//            Arrays.stream(resources).forEach(name ->
+//                    System.out.println(name.getFilename()));
+//            Resource[] objects = (Resource[]) Arrays.stream(resources).filter(name ->
+//                    !(name.getFilename() == "AccountName.csv")
+//
+//            ).toArray();
+//            for (int i = 0; i < objects.length; i++) {
+//                System.out.println(objects[i]);
+//            }
+//            String path = "/home/nojpg/IdeaProjects/etl/src/main/resources/input/";
+//            String inputCsv[] = new File(path).list((dir, name) ->{
+//                if(!(name.equals("AccountName.csv"))){
+//                    name.endsWith(".csv");
+//                    return true;
+//                }
+//                return false;
+//            });
+//            for (int i = 0; i < inputCsv.length; i++) {
+//                System.out.println(inputCsv[i]);
+//            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assert resources != null;
+        reader.setResources(resources);
+        reader.setDelegate(customerNameFlatFileItemReader());
+//        reader.setStrict(false);
+        return reader;
+    }
+
+    @Bean
+    public FlatFileItemReader<CustomerName> customerNameFlatFileItemReader() {
+        FlatFileItemReader<CustomerName> reader = new FlatFileItemReader<>();
+        reader.setLineMapper(new DefaultLineMapper<CustomerName>(){{
+            setFieldSetMapper(new BeanWrapperFieldSetMapper<CustomerName>(){{
+                setTargetType(CustomerName.class);
+            }});
+            setLineTokenizer(new DelimitedLineTokenizer(){{
+//                String path = "/home/nojpg/IdeaProjects/etl/src/main/resources/input/";
+//                String inputCsv[] = new File(path).list((dir, name) ->{
+//                    if(!(name.equals("AccountName.csv"))){
+//                        name.endsWith(".csv");
+//                        return true;
+//                    }
+//                    return false;
+//                });
+
+                setNames(new String[]{"trafficVolume", "date", "address"});
+            }});
+
+        }});
+        reader.setStrict(false);
+        return reader;
+    }
+
+
+    @Bean
     public FlatFileItemReader<AccountName> csvToDbReader() {
         FlatFileItemReader<AccountName> reader = new FlatFileItemReader<>();
-        reader.setResource(new ClassPathResource("AccountName.csv"));
+        reader.setResource(new ClassPathResource("input/AccountName.csv"));
         reader.setLineMapper(new DefaultLineMapper<AccountName>() {{
             setLineTokenizer(new DelimitedLineTokenizer() {{
-                setNames(new String[]{"accountName", "trafficVolume", "city", "street", "house"});
+                setNames(new String[]{"accountName", "trafficVolume", "date","city", "street", "house"});
             }});
             setFieldSetMapper(new BeanWrapperFieldSetMapper<AccountName>() {{
                 setTargetType(AccountName.class);
             }});
         }});
+        reader.setStrict(false);
+
         return reader;
     }
 
     @Bean
     public CsvToDbItemProcessor csvToDbProcessor() {
         return new CsvToDbItemProcessor();
+    }
+
+    @Bean
+    public CsvToDbCusItemProcessor foo() {
+        return new CsvToDbCusItemProcessor();
     }
 
     @Bean
@@ -91,14 +176,13 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public Job accountJob(JobCompletionNotificationListener listener, Reader readerListener) {
+    public Job accountJob(JobCompletionNotificationListener listener, @Qualifier("csvToDbStep1") Step csvToDbStep1, @Qualifier("csvToDpStep2") Step csvToDpStep2) {
         return jobBuilderFactory.get("accountJob")
                 .incrementer(new RunIdIncrementer())
-//                .listener(listener)
-                .start(csvToDbStep1())
-                .next(flowDecision)
-//                .flow(csvToDbStep1())
-                .end()
+                .listener(listener)
+//                .start(csvToDbStep1)
+                .start(csvToDpStep2)
+//                .next(csvToDpStep2)
                 .build();
     }
 
@@ -113,49 +197,14 @@ public class BatchConfiguration {
                 .build();
     }
 
-    @Bean //TODO how to do reader
-    public ItemReader<String> csvGeneratorReader() {
-
-//        ItemReader<Account> reader = new ItemReader<>() {
-//            @Override
-//            public Account read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
-//                return null;
-//            }
-//        };
-//        reader.setRepository(accountDataRepository);
-//        reader.setMethodName("findAll");
-//        Map<String, Sort.Direction> sort = new HashMap<>();
-//        sort.put("id", Sort.Direction.ASC);
-//        reader.setSort(sort);
-        return null;
-    }
-//
     @Bean
-    public GenerateCsvItemProcessor javaToCsvItemProcessor() {
-        return new GenerateCsvItemProcessor();
-    }
-
-    @Bean
-    public FlatFileItemWriter<AccountName> javaToCsvWriter(){ //TODO add folder and .csv?
-        FlatFileItemWriter<AccountName> writer = new FlatFileItemWriter<>();
-        writer.setResource(new FileSystemResource("input/") {
-        });
-        writer.setLineAggregator(new DelimitedLineAggregator<AccountName>(){{
-            setDelimiter(",");
-            setFieldExtractor(new BeanWrapperFieldExtractor<AccountName>(){{
-                setNames(new String[]{"accountName", "trafficVolume", "city", "street", "house"});
-            }});
-        }});
-        return writer;
-    }
-
-    @Bean
-    public Step csvGeneratorStep() {
-        return stepBuilderFactory.get("step1").
-                <Account, AccountName>chunk(10)
-                .reader(csvGeneratorReader())
-                .processor(javaToCsvItemProcessor())
-                .writer(javaToCsvWriter())
+    public Step csvToDpStep2(){
+        return stepBuilderFactory.get("step2")
+                .<CustomerName, Account>chunk(10)
+                .reader(resourceItemReader())
+                .processor(foo())
+                .writer(csvToDbWriter())
+                .listener(readerListener)
                 .build();
     }
 }
