@@ -1,4 +1,4 @@
-package pirate.tid.etl.service;
+package pirate.tid.etl.configuration;
 
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
@@ -17,12 +17,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Component
-public class Reader implements StepExecutionListener{
+public class StepListener implements StepExecutionListener{
     private List<AccountName> accountNames = new ArrayList<>();
     private static final String COMMA_DELIMITER = ",";
-    private List<String> fileList = new ArrayList<>();
-    private static final String OUTPUT_ZIP_FILE = "/home/sovereign/IdeaProjects/etl/src/main/resources/output/zipped.zip";
-    private static final String SOURCE_FOLDER = "/home/sovereign/IdeaProjects/etl/src/main/resources/input/";
+
     private List<CustomerName> customerNames = new ArrayList<>();
 
 
@@ -40,7 +38,7 @@ public class Reader implements StepExecutionListener{
             accountNames.add(accountName);
         }
         try {
-            writeToCsvAccount(accountNames, "/home/sovereign/IdeaProjects/etl/src/main/resources/input/AccountName.csv");
+            writeToCsvAccount(accountNames, "/home/nojpg/IdeaProjects/etl/src/main/resources/input/AccountName.csv");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -57,12 +55,17 @@ public class Reader implements StepExecutionListener{
 
         for (int i = 0; i < customerNames.size(); i++) {
             try {
-                writeToCsvCustomer(customerNames, i,"/home/sovereign/IdeaProjects/etl/src/main/resources/input/" + customerNames.get(i).getCustomerName() + ".csv");
+                writeToCsvCustomer(customerNames, i,"/home/nojpg/IdeaProjects/etl/src/main/resources/input/" + customerNames.get(i).getCustomerName() + ".csv");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
+    }
+
+    @Override
+    public ExitStatus afterStep(StepExecution stepExecution) {
+        return null;
     }
 
     private void writeToCsvAccount(List<AccountName> list, String fileName) throws IOException{
@@ -121,75 +124,5 @@ public class Reader implements StepExecutionListener{
             }
             Objects.requireNonNull(fileWriter).flush();
             fileWriter.close();
-    }
-
-    @Override
-    public ExitStatus afterStep(StepExecution stepExecution) {
-//        generateFileList(new File(SOURCE_FOLDER));
-//        zipIt(OUTPUT_ZIP_FILE);
-        return null;
-    }
-
-    public void zipIt(String zipFile){
-
-        byte[] buffer = new byte[1024];
-
-        try{
-            FileOutputStream fos = new FileOutputStream(zipFile);
-            ZipOutputStream zos = new ZipOutputStream(fos);
-
-            System.out.println("Output to Zip : " + zipFile);
-
-            for(String file : this.fileList){
-
-                System.out.println("File Added : " + file);
-                ZipEntry ze= new ZipEntry(file);
-                zos.putNextEntry(ze);
-
-                FileInputStream in =
-                        new FileInputStream(SOURCE_FOLDER + File.separator + file);
-
-                int len;
-                while ((len = in.read(buffer)) > 0) {
-                    zos.write(buffer, 0, len);
-                }
-
-                in.close();
-            }
-
-            zos.closeEntry();
-            zos.close();
-
-            System.out.println("Done");
-        }catch(IOException ex){
-            ex.printStackTrace();
-        }
-    }
-
-    private void generateFileList(File node){
-
-
-        String path = "/home/nojpg/IdeaProjects/etl/src/main/resources/input/";
-        String inputCsv[] = new File(path).list((dir, name) -> name.endsWith(".csv"));
-        fileList.addAll(Arrays.asList(Objects.requireNonNull(inputCsv)));
-
-
-        //add file only
-//        if(node.isFile()){
-//            fileList.add(generateZipEntry(node.getAbsoluteFile().toString()));
-//            System.out.println(fileList);
-//        }
-
-//        if(node.isDirectory()){
-//            String[] subNote = node.list();
-//            for(String filename : subNote){
-//                generateFileList(new File(node, filename));
-//            }
-//        }
-
-    }
-
-    private String generateZipEntry(String file){
-        return file.substring(SOURCE_FOLDER.length()+1, file.length());
     }
 }

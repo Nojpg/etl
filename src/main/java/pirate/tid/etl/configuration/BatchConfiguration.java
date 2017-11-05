@@ -20,13 +20,11 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.scheduling.annotation.Scheduled;
 import pirate.tid.etl.domain.Account;
 import pirate.tid.etl.domain.AccountName;
 import pirate.tid.etl.domain.CustomerName;
 import pirate.tid.etl.repository.AccountDataRepository;
-import pirate.tid.etl.service.CsvToDbCusItemProcessor;
-import pirate.tid.etl.service.CsvToDbItemProcessor;
-import pirate.tid.etl.service.Reader;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -51,12 +49,10 @@ public class BatchConfiguration {
     @Autowired
     public DataSource dataSource;
     @Autowired
-    AccountDataRepository accountDataRepository;
+    AccountDataRepository accountService;
     @Autowired
-    public Reader readerListener;
-
-    @Autowired
-    public FlowDecision flowDecision;
+    public StepListener listener;
+    
 
     @Bean
     public MultiResourceItemReader<CustomerName> resourceItemReader(){
@@ -151,7 +147,7 @@ public class BatchConfiguration {
     @Bean
     public RepositoryItemWriter<Account> csvToDbWriter(){
         RepositoryItemWriter<Account> writer = new RepositoryItemWriter<>();
-        writer.setRepository(accountDataRepository);
+        writer.setRepository(accountService);
         writer.setMethodName("save");
         return writer;
     }
@@ -162,7 +158,6 @@ public class BatchConfiguration {
                 .incrementer(new RunIdIncrementer())
                 .listener(listener)
                 .start(csvToDbStep1)
-//                .start(csvToDpStep2)
                 .next(csvToDpStep2)
                 .build();
     }
@@ -174,7 +169,7 @@ public class BatchConfiguration {
                 .reader(csvToDbReader())
                 .processor(csvAccount())
                 .writer(csvToDbWriter())
-                .listener(readerListener)
+                .listener(listener)
                 .build();
     }
 
@@ -185,7 +180,7 @@ public class BatchConfiguration {
                 .reader(resourceItemReader())
                 .processor(csvCustomer())
                 .writer(csvToDbWriter())
-                .listener(readerListener)
+                .listener(listener)
                 .build();
     }
 }

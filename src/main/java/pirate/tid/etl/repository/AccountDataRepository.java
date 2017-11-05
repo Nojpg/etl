@@ -8,7 +8,6 @@ import pirate.tid.etl.domain.Account;
  * Created by Nojpg on 28.09.17.
  */
 
-@Repository
 public interface AccountDataRepository extends JpaRepository<Account, Long> {
     Account findByAccountName (String accountName);
 }
