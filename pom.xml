@@ -71,10 +71,7 @@
             <artifactId>junit-jupiter-api</artifactId>
             <version>RELEASE</version>
         </dependency>
-
-
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -91,6 +88,5 @@
             </plugin>
         </plugins>
     </build>
-
 
 </project>
