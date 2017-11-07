@@ -29,8 +29,8 @@ import java.util.zip.ZipOutputStream;
 @Component
 @Slf4j
 public class JobCompletionNotificationListener extends JobExecutionListenerSupport {
-    private static final String OUTPUT_ZIP_FILE = "/home/nojpg/IdeaProjects/etl/src/main/resources/output/zipped.zip";
-    private static final String SOURCE_FOLDER = "/home/nojpg/IdeaProjects/etl/src/main/resources/input/";
+    private static final String OUTPUT_ZIP_FILE = "/home/sovereign/Public/etl/src/main/resources/output/zipped.zip";
+    private static final String SOURCE_FOLDER = "/home/sovereign/Public/etl/src/main/resources/input/";
     private List<String> fileList = new ArrayList<>();
 
 
@@ -87,7 +87,7 @@ public class JobCompletionNotificationListener extends JobExecutionListenerSuppo
     private void generateFileList(File node){
 
 
-        String path = "/home/nojpg/IdeaProjects/etl/src/main/resources/input/";
+        String path = "/home/sovereign/Public/etl/src/main/resources/input";
         String inputCsv[] = new File(path).list((dir, name) -> name.endsWith(".csv"));
         fileList.addAll(Arrays.asList(Objects.requireNonNull(inputCsv)));
 

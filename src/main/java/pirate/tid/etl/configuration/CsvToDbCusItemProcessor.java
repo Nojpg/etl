@@ -18,12 +18,12 @@ import static java.util.stream.Collectors.toList;
  */
 @Slf4j
 public class CsvToDbCusItemProcessor implements ItemProcessor<CustomerName, Account>{
-    static int count = 0;
+    private static int count = 0;
 
 
     @Override
     public Account process(CustomerName customerName){
-        String path = "/home/nojpg/IdeaProjects/etl/src/main/resources/input/";
+        String path = "/home/sovereign/Public/etl/src/main/resources/input/";
         List<String> names = Arrays.stream(Objects.requireNonNull(new File(path).list((
                 (dir, name) -> !name.equals("AccountName.csv") && name.endsWith(".csv")
         )))).map(name -> name.split("\\.")[0])

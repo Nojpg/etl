@@ -38,7 +38,7 @@ public class StepListener implements StepExecutionListener{
             accountNames.add(accountName);
         }
         try {
-            writeToCsvAccount(accountNames, "/home/nojpg/IdeaProjects/etl/src/main/resources/input/AccountName.csv");
+            writeToCsvAccount(accountNames, "/home/sovereign/Public/etl/src/main/resources/input/AccountName.csv");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -55,7 +55,7 @@ public class StepListener implements StepExecutionListener{
 
         for (int i = 0; i < customerNames.size(); i++) {
             try {
-                writeToCsvCustomer(customerNames, i,"/home/nojpg/IdeaProjects/etl/src/main/resources/input/" + customerNames.get(i).getCustomerName() + ".csv");
+                writeToCsvCustomer(customerNames, i,"/home/sovereign/Public/etl/src/main/resources/input/" + customerNames.get(i).getCustomerName() + ".csv");
             } catch (IOException e) {
                 e.printStackTrace();
             }
